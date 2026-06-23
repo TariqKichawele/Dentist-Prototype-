@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -15,7 +14,6 @@ const SERVICE_CATEGORIES = [
   {
     id: "preventative",
     title: "Preventative Care",
-    description: "Routine Cleanings, X-Rays, Check-ups",
     icon: Shield,
     services: ["Routine Cleaning", "Dental X-Rays", "Annual Check-up"],
     bookingService: "cleaning",
@@ -24,7 +22,6 @@ const SERVICE_CATEGORIES = [
   {
     id: "restorative",
     title: "Advanced Restorative",
-    description: "Root Canals, Crowns, Fillings",
     icon: Stethoscope,
     services: ["Root Canal", "Dental Crown", "Tooth Filling"],
     bookingService: "other",
@@ -33,7 +30,6 @@ const SERVICE_CATEGORIES = [
   {
     id: "cosmetic",
     title: "Cosmetic / Aesthetics",
-    description: "Veneers, Professional Whitening, Clear Aligners",
     icon: Sparkles,
     services: ["Veneers", "Professional Whitening", "Clear Aligners"],
     bookingService: "cosmetic",
@@ -71,9 +67,6 @@ export function ServicesSection() {
                 <CardTitle className="w-full text-center text-lg text-foreground">
                   {category.title}
                 </CardTitle>
-                <CardDescription className="text-center">
-                  {category.description}
-                </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-1 flex-col items-center pb-4">
                 <ul className="space-y-2 text-sm text-muted-foreground">

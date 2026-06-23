@@ -182,6 +182,27 @@
     opacity: 1;
     transform: translateY(0);
   }
+  .partner-marquee-viewport {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      black 8%,
+      black 92%,
+      transparent
+    );
+  }
+  .partner-marquee-track {
+    animation: partner-marquee 40s linear infinite;
+  }
+}
+
+@keyframes partner-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -192,6 +213,9 @@
     opacity: 1;
     transform: none;
     transition: none;
+  }
+  .partner-marquee-track {
+    animation: none;
   }
   *,
   *::before,
