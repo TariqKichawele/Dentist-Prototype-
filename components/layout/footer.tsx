@@ -11,7 +11,7 @@ import {
   PRACTICE_NAME,
   SOCIAL_LINKS,
 } from "@/lib/practice";
-import { Share2 } from "lucide-react";
+import { SocialIconLink } from "@/components/ui/social-icon-link";
 
 const QUICK_LINKS = [
   { href: "/#services", label: "Services" },
@@ -52,33 +52,15 @@ export function Footer() {
               Accepting new patients.
             </p>
             <div className="mt-4 flex gap-3">
-              <a
+              <SocialIconLink
+                platform="instagram"
                 href={SOCIAL_LINKS.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex size-9 items-center justify-center rounded-full border border-border text-xs font-bold text-muted-foreground transition-colors hover:border-brand-primary hover:text-brand-primary"
-                aria-label="Instagram"
-              >
-                IG
-              </a>
-              <a
+              />
+              <SocialIconLink
+                platform="facebook"
                 href={SOCIAL_LINKS.facebook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex size-9 items-center justify-center rounded-full border border-border text-xs font-bold text-muted-foreground transition-colors hover:border-brand-primary hover:text-brand-primary"
-                aria-label="Facebook"
-              >
-                FB
-              </a>
-              <a
-                href={SOCIAL_LINKS.google}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex size-9 items-center justify-center rounded-full border border-border text-muted-foreground transition-colors hover:border-brand-primary hover:text-brand-primary"
-                aria-label="Google Reviews"
-              >
-                <Share2 className="size-4" aria-hidden="true" />
-              </a>
+              />
+              <SocialIconLink platform="google" href={SOCIAL_LINKS.google} />
             </div>
           </div>
 

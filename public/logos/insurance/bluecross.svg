@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 36" role="img" aria-label="Blue Cross Blue Shield">
+  <title>Blue Cross Blue Shield</title>
+  <g fill="#0088CE">
+    <rect x="10" y="8" width="8" height="20" rx="1"/>
+    <rect x="2" y="14" width="24" height="8" rx="1"/>
+  </g>
+  <path fill="#0088CE" d="M44 8h14c6 0 10 4 10 10s-4 10-10 10H44V8zm14 16c3.3 0 5.5-2.2 5.5-6s-2.2-6-5.5-6h-7v12h7z"/>
+  <text x="78" y="15" fill="#0088CE" font-family="Arial, Helvetica, sans-serif" font-size="9" font-weight="700">Blue Cross</text>
+  <text x="78" y="27" fill="#0088CE" font-family="Arial, Helvetica, sans-serif" font-size="9" font-weight="700">Blue Shield</text>
+</svg>

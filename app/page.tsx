@@ -19,9 +19,9 @@ export default function Home() {
       <Navbar />
       <main id="main-content">
         <HeroSection />
+        <InsuranceSection />
         <ServicesSection />
         <GuaranteeSection />
-        <InsuranceSection />
         <TeamSection />
         <TestimonialsSection />
         <PricingSection />
