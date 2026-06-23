@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,7 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useBooking } from "@/components/providers/booking-provider";
+import { getBookingHref } from "@/lib/booking";
 import { Award, ShieldCheck, Star } from "lucide-react";
 
 const SERVICES = [
@@ -21,8 +22,6 @@ const SERVICES = [
 ];
 
 export function HeroSection() {
-  const { openBooking } = useBooking();
-
   return (
     <section className="section-container py-12 md:py-20">
       <div className="grid items-center gap-12 lg:grid-cols-2">
@@ -74,21 +73,23 @@ export function HeroSection() {
                 Action
               </span>
               <Button
-                onClick={() => openBooking()}
+                asChild
                 className="h-11 w-full rounded-full bg-brand-accent px-6 font-semibold text-white hover:bg-brand-accent-hover sm:w-auto"
               >
-                Book Online Now
+                <Link href={getBookingHref()}>Book Online Now</Link>
               </Button>
             </div>
           </div>
 
           <div className="flex flex-col gap-3">
             <Button
-              onClick={() => openBooking()}
+              asChild
               size="lg"
               className="h-12 w-full rounded-full bg-brand-accent px-8 text-base font-semibold text-white hover:bg-brand-accent-hover sm:w-fit"
             >
-              Book Online Now — Free First Consultation
+              <Link href={getBookingHref()}>
+                Book Online Now — Free First Consultation
+              </Link>
             </Button>
             <Button
               variant="ghost"

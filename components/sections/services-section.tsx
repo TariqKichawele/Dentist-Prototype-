@@ -1,5 +1,4 @@
-"use client";
-
+import Link from "next/link";
 import {
   Card,
   CardContent,
@@ -9,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useBooking } from "@/components/providers/booking-provider";
+import { getBookingHref } from "@/lib/booking";
 import { Sparkles, Shield, Stethoscope } from "lucide-react";
 
 const SERVICE_CATEGORIES = [
@@ -40,11 +39,9 @@ const SERVICE_CATEGORIES = [
 ];
 
 export function ServicesSection() {
-  const { openBooking } = useBooking();
-
   return (
     <section id="services" className="section-container py-16 md:py-24">
-      <div className="mb-12 max-w-2xl">
+      <div className="mx-auto mb-12 max-w-2xl text-center">
         <h2>Services Designed Around Your Needs</h2>
         <p className="mt-3 text-muted-foreground">
           Clear, jargon-free care categories so you can find exactly what you
@@ -82,10 +79,12 @@ export function ServicesSection() {
                   <Button
                     key={service}
                     variant="outline"
-                    onClick={() => openBooking(service)}
+                    asChild
                     className="h-10 w-full rounded-xl border-brand-primary/20 text-brand-primary hover:bg-brand-primary/5"
                   >
-                    Check Availability for {service}
+                    <Link href={getBookingHref(service)}>
+                      Check Availability for {service}
+                    </Link>
                   </Button>
                 ))}
               </CardFooter>

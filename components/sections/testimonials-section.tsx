@@ -91,15 +91,20 @@ export function TestimonialsSection() {
 
   return (
     <section id="testimonials" className="section-container py-16 md:py-24">
-      <div className="mb-8 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+      <div className="mx-auto flex max-w-3xl flex-col items-center gap-8 text-center">
         <div>
           <h2>What Our Patients Say</h2>
-          <p className="mt-3 max-w-lg text-muted-foreground">
+          <p className="mt-3 text-muted-foreground">
             Real reviews from real patients — filter by the service you&apos;re
             considering.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Filter testimonials">
+
+        <div
+          className="flex flex-wrap justify-center gap-2"
+          role="tablist"
+          aria-label="Filter testimonials"
+        >
           {FILTERS.map((f) => (
             <Button
               key={f.id}
@@ -117,22 +122,21 @@ export function TestimonialsSection() {
             </Button>
           ))}
         </div>
-      </div>
 
-      <Card className="overflow-hidden rounded-2xl border-border bg-surface-white shadow-sm">
-        <CardContent className="p-6 md:p-10">
-          <div className="flex flex-col gap-6 md:flex-row md:items-center md:gap-10">
-            <div className="relative mx-auto size-24 shrink-0 overflow-hidden rounded-full md:mx-0 md:size-28">
-              <Image
-                src={current.image}
-                alt={`${current.name}, patient`}
-                fill
-                className="object-cover"
-                sizes="112px"
-              />
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <div className="mb-3 flex items-center justify-center gap-1 md:justify-start">
+        <Card className="w-full overflow-hidden rounded-2xl border-border bg-surface-white shadow-sm">
+          <CardContent className="p-6 md:p-10">
+            <div className="flex flex-col items-center gap-6 text-center">
+              <div className="relative size-24 shrink-0 overflow-hidden rounded-full md:size-28">
+                <Image
+                  src={current.image}
+                  alt={`${current.name}, patient`}
+                  fill
+                  className="object-cover"
+                  sizes="112px"
+                />
+              </div>
+
+              <div className="flex items-center justify-center gap-1">
                 {Array.from({ length: current.rating }).map((_, i) => (
                   <Star
                     key={i}
@@ -141,12 +145,17 @@ export function TestimonialsSection() {
                   />
                 ))}
               </div>
-              <blockquote className="text-lg leading-relaxed text-foreground">
+
+              <blockquote className="max-w-2xl text-lg leading-relaxed text-foreground">
                 &ldquo;{current.text}&rdquo;
               </blockquote>
-              <div className="mt-4 flex flex-wrap items-center justify-center gap-3 md:justify-start">
+
+              <div className="flex flex-wrap items-center justify-center gap-3">
                 <p className="font-semibold text-foreground">{current.name}</p>
-                <Badge variant="outline" className="rounded-full border-brand-secondary/30 text-brand-secondary">
+                <Badge
+                  variant="outline"
+                  className="rounded-full border-brand-secondary/30 text-brand-secondary"
+                >
                   {current.service}
                 </Badge>
                 {current.verified && (
@@ -155,30 +164,31 @@ export function TestimonialsSection() {
                   </Badge>
                 )}
               </div>
+
+              <div className="flex justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={goPrev}
+                  aria-label="Previous testimonial"
+                  className="rounded-full"
+                >
+                  <ChevronLeft />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={goNext}
+                  aria-label="Next testimonial"
+                  className="rounded-full"
+                >
+                  <ChevronRight />
+                </Button>
+              </div>
             </div>
-            <div className="flex justify-center gap-2 md:flex-col">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={goPrev}
-                aria-label="Previous testimonial"
-                className="rounded-full"
-              >
-                <ChevronLeft />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={goNext}
-                aria-label="Next testimonial"
-                className="rounded-full"
-              >
-                <ChevronRight />
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </section>
   );
 }

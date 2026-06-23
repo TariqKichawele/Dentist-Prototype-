@@ -1,13 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,7 +15,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useBooking } from "@/components/providers/booking-provider";
 import { cn } from "@/lib/utils";
 import {
   Calendar,
@@ -31,6 +24,7 @@ import {
   Stethoscope,
   AlertCircle,
   HelpCircle,
+  ArrowLeft,
 } from "lucide-react";
 
 const SERVICE_OPTIONS = [
@@ -77,6 +71,7 @@ const TIME_SLOTS = {
 };
 
 const LOW_AVAILABILITY_DAYS = [3, 7, 12, 18];
+const STEPS = ["Service", "Insurance", "Schedule", "Details", "Confirmed"];
 
 type FormData = {
   service: string;
@@ -91,8 +86,6 @@ type FormData = {
 };
 
 type FormErrors = Partial<Record<keyof FormData, string>>;
-
-const STEPS = ["Service", "Insurance", "Schedule", "Details", "Confirmed"];
 
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 10);
@@ -113,8 +106,21 @@ function isSameDay(a: Date, b: Date) {
   );
 }
 
-export function BookingModal() {
-  const { isOpen, closeBooking, preselectedService } = useBooking();
+function findServiceMatch(preselectedService: string) {
+  return SERVICE_OPTIONS.find(
+    (s) =>
+      s.mapsTo === preselectedService ||
+      s.label.includes(preselectedService) ||
+      preselectedService.includes(s.mapsTo) ||
+      preselectedService.includes(s.label)
+  );
+}
+
+type BookingFunnelProps = {
+  preselectedService?: string | null;
+};
+
+export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -133,43 +139,14 @@ export function BookingModal() {
     textReminders: true,
   });
 
-  const resetForm = useCallback(() => {
-    setStep(0);
-    setErrors({});
-    setSubmitting(false);
-    setProcessing(false);
-    setCalendarMonth(new Date());
-    setForm({
-      service: "",
-      insurance: "",
-      date: null,
-      time: "",
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      textReminders: true,
-    });
-  }, []);
-
   useEffect(() => {
-    if (!isOpen) {
-      resetForm();
-      return;
+    if (!preselectedService) return;
+    const match = findServiceMatch(preselectedService);
+    if (match) {
+      setForm((f) => ({ ...f, service: match.id }));
+      setStep(1);
     }
-    if (preselectedService) {
-      const match = SERVICE_OPTIONS.find(
-        (s) =>
-          s.mapsTo === preselectedService ||
-          s.label.includes(preselectedService) ||
-          preselectedService.includes(s.mapsTo)
-      );
-      if (match) {
-        setForm((f) => ({ ...f, service: match.id }));
-        setStep(1);
-      }
-    }
-  }, [isOpen, preselectedService, resetForm]);
+  }, [preselectedService]);
 
   const handleServiceSelect = (serviceId: string) => {
     setForm((f) => ({ ...f, service: serviceId }));
@@ -213,29 +190,35 @@ export function BookingModal() {
   const calendarDays = Array.from({ length: daysInMonth }, (_, i) => {
     const day = i + 1;
     const date = new Date(year, month, day);
-    const isPast = date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const isPast =
+      date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const isLowAvailability = LOW_AVAILABILITY_DAYS.includes(day);
     return { day, date, isPast, isLowAvailability };
   });
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && closeBooking()}>
-      <DialogContent
-        className="flex max-h-[90vh] flex-col overflow-hidden rounded-2xl p-0 sm:max-w-2xl"
-        aria-describedby="booking-description"
+    <div className="mx-auto w-full max-w-2xl">
+      <Link
+        href="/"
+        className="mb-6 inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-brand-primary"
       >
-        <DialogHeader className="border-b px-6 py-4">
-          <DialogTitle className="text-xl font-semibold text-foreground">
+        <ArrowLeft className="size-4" aria-hidden="true" />
+        Back to home
+      </Link>
+
+      <div className="overflow-hidden rounded-2xl border border-border bg-surface-white shadow-sm">
+        <div className="border-b px-6 py-5">
+          <p className="text-2xl font-bold text-foreground">
             {step === 4 ? "You're All Set!" : "Book Your Appointment"}
-          </DialogTitle>
-          <DialogDescription id="booking-description">
+          </p>
+          <p className="mt-1 text-sm text-muted-foreground" id="booking-description">
             {step === 4
               ? "Your appointment has been confirmed."
               : `Step ${step + 1} of 4 — ${STEPS[step]}`}
-          </DialogDescription>
+          </p>
 
           {step < 4 && (
-            <div className="mt-3 flex gap-1.5" aria-hidden="true">
+            <div className="mt-4 flex gap-1.5" aria-hidden="true">
               {[0, 1, 2, 3].map((s) => (
                 <div
                   key={s}
@@ -247,15 +230,14 @@ export function BookingModal() {
               ))}
             </div>
           )}
-        </DialogHeader>
+        </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-6">
-          {/* Step 1: Service Selection */}
+        <div className="px-6 py-6">
           {step === 0 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">
+              <h2 className="text-lg font-semibold text-foreground">
                 What brings you in today?
-              </h3>
+              </h2>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {SERVICE_OPTIONS.map((option) => {
                   const Icon = option.icon;
@@ -284,13 +266,12 @@ export function BookingModal() {
             </div>
           )}
 
-          {/* Step 2: Insurance */}
           {step === 1 && (
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">
+                <h2 className="text-lg font-semibold text-foreground">
                   Insurance & Payment
-                </h3>
+                </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Selected: {selectedServiceLabel}
                 </p>
@@ -331,31 +312,37 @@ export function BookingModal() {
                 </div>
               )}
 
-              <Button
-                onClick={() => setStep(2)}
-                disabled={!form.insurance}
-                className="h-11 w-full rounded-full bg-brand-primary hover:bg-brand-primary/90"
-              >
-                Continue to Scheduling
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(0)}
+                  className="h-11 rounded-full"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={() => setStep(2)}
+                  disabled={!form.insurance}
+                  className="h-11 flex-1 rounded-full bg-brand-primary hover:bg-brand-primary/90"
+                >
+                  Continue to Scheduling
+                </Button>
+              </div>
             </div>
           )}
 
-          {/* Step 3: Calendar */}
           {step === 2 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">
+              <h2 className="text-lg font-semibold text-foreground">
                 Choose Date & Time
-              </h3>
+              </h2>
 
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="rounded-xl border border-border p-4">
                   <div className="mb-4 flex items-center justify-between">
                     <button
                       type="button"
-                      onClick={() =>
-                        setCalendarMonth(new Date(year, month - 1, 1))
-                      }
+                      onClick={() => setCalendarMonth(new Date(year, month - 1, 1))}
                       className="rounded-lg px-2 py-1 text-sm text-brand-primary hover:bg-brand-primary/5"
                       aria-label="Previous month"
                     >
@@ -369,9 +356,7 @@ export function BookingModal() {
                     </span>
                     <button
                       type="button"
-                      onClick={() =>
-                        setCalendarMonth(new Date(year, month + 1, 1))
-                      }
+                      onClick={() => setCalendarMonth(new Date(year, month + 1, 1))}
                       className="rounded-lg px-2 py-1 text-sm text-brand-primary hover:bg-brand-primary/5"
                       aria-label="Next month"
                     >
@@ -379,14 +364,9 @@ export function BookingModal() {
                     </button>
                   </div>
 
-                  <div
-                    className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground"
-                    role="row"
-                  >
+                  <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground">
                     {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
-                      <div key={d} role="columnheader">
-                        {d}
-                      </div>
+                      <div key={d}>{d}</div>
                     ))}
                   </div>
 
@@ -405,9 +385,7 @@ export function BookingModal() {
                           key={day}
                           type="button"
                           disabled={isPast}
-                          onClick={() =>
-                            setForm((f) => ({ ...f, date, time: "" }))
-                          }
+                          onClick={() => setForm((f) => ({ ...f, date, time: "" }))}
                           aria-label={`${date.toLocaleDateString("default", { month: "long", day: "numeric" })}${isLowAvailability ? ", limited availability" : ""}`}
                           aria-selected={selected ?? undefined}
                           role="gridcell"
@@ -420,19 +398,21 @@ export function BookingModal() {
                         >
                           {day}
                           {isLowAvailability && !isPast && (
-                            <span className="absolute -top-0.5 right-0.5 size-1.5 rounded-full bg-warning" aria-hidden="true" />
+                            <span
+                              className="absolute -top-0.5 right-0.5 size-1.5 rounded-full bg-warning"
+                              aria-hidden="true"
+                            />
                           )}
                         </button>
                       );
                     })}
                   </div>
 
-                  {form.date &&
-                    LOW_AVAILABILITY_DAYS.includes(form.date.getDate()) && (
-                      <Badge className="mt-3 rounded-full bg-warning/10 text-warning hover:bg-warning/10">
-                        Only 2 slots left for this day
-                      </Badge>
-                    )}
+                  {form.date && LOW_AVAILABILITY_DAYS.includes(form.date.getDate()) && (
+                    <Badge className="mt-3 rounded-full bg-warning/10 text-warning hover:bg-warning/10">
+                      Only 2 slots left for this day
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="max-h-72 space-y-4 overflow-y-auto">
@@ -472,23 +452,31 @@ export function BookingModal() {
                 </div>
               </div>
 
-              <Button
-                onClick={() => setStep(3)}
-                disabled={!form.date || !form.time}
-                className="h-11 w-full rounded-full bg-brand-primary hover:bg-brand-primary/90"
-              >
-                Continue
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(1)}
+                  className="h-11 rounded-full"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={() => setStep(3)}
+                  disabled={!form.date || !form.time}
+                  className="h-11 flex-1 rounded-full bg-brand-primary hover:bg-brand-primary/90"
+                >
+                  Continue
+                </Button>
+              </div>
             </div>
           )}
 
-          {/* Step 4: Lead Capture */}
           {step === 3 && (
             <div className="space-y-5">
               <div>
-                <h3 className="text-lg font-semibold text-foreground">
+                <h2 className="text-lg font-semibold text-foreground">
                   Almost Done — Your Details
-                </h3>
+                </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   {form.date?.toLocaleDateString("default", {
                     weekday: "long",
@@ -503,18 +491,14 @@ export function BookingModal() {
                 <FloatingInput
                   label="First Name"
                   value={form.firstName}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, firstName: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
                   error={errors.firstName}
                   autoComplete="given-name"
                 />
                 <FloatingInput
                   label="Last Name"
                   value={form.lastName}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, lastName: e.target.value }))
-                  }
+                  onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
                   error={errors.lastName}
                   autoComplete="family-name"
                 />
@@ -553,43 +537,50 @@ export function BookingModal() {
                   htmlFor="text-reminders"
                   className="cursor-pointer text-sm leading-relaxed text-muted-foreground"
                 >
-                  Send me text reminders for this appointment (highly
-                  recommended)
+                  Send me text reminders for this appointment (highly recommended)
                 </Label>
               </div>
 
-              <Button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="h-12 w-full rounded-full bg-brand-accent text-base font-semibold text-white hover:bg-brand-accent-hover"
-              >
-                {submitting ? (
-                  <span className="flex items-center gap-2">
-                    <Spinner className="size-5 text-white" />
-                    Confirming...
-                  </span>
-                ) : (
-                  "Confirm Appointment"
-                )}
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(2)}
+                  className="h-11 rounded-full"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={handleSubmit}
+                  disabled={submitting}
+                  className="h-12 flex-1 rounded-full bg-brand-accent text-base font-semibold text-white hover:bg-brand-accent-hover"
+                >
+                  {submitting ? (
+                    <span className="flex items-center gap-2">
+                      <Spinner className="size-5 text-white" />
+                      Confirming...
+                    </span>
+                  ) : (
+                    "Confirm Appointment"
+                  )}
+                </Button>
+              </div>
             </div>
           )}
 
-          {/* Step 5: Success */}
           {step === 4 && (
             <div className="flex flex-col items-center py-4 text-center">
               {processing ? (
                 <Spinner className="size-12 text-brand-primary" />
               ) : (
                 <CheckCircle2
-                  className="size-16 text-success animate-in zoom-in-50 duration-500"
+                  className="size-16 animate-in zoom-in-50 text-success duration-500"
                   aria-hidden="true"
                 />
               )}
 
-              <h3 className="mt-6 text-xl font-semibold text-foreground">
+              <h2 className="mt-6 text-xl font-semibold text-foreground">
                 Appointment Confirmed!
-              </h3>
+              </h2>
               <p className="mt-2 text-muted-foreground">
                 We&apos;ve sent a confirmation to {form.email}
               </p>
@@ -631,11 +622,7 @@ export function BookingModal() {
               </div>
 
               <div className="mt-6 flex w-full flex-col gap-3 sm:flex-row">
-                <Button
-                  variant="outline"
-                  className="h-11 flex-1 rounded-full"
-                  asChild
-                >
+                <Button variant="outline" className="h-11 flex-1 rounded-full" asChild>
                   <a
                     href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=Dental+Appointment&dates=20260101T100000Z/20260101T110000Z&details=${selectedServiceLabel}&location=123+Smile+Avenue`}
                     target="_blank"
@@ -645,16 +632,16 @@ export function BookingModal() {
                   </a>
                 </Button>
                 <Button
-                  onClick={closeBooking}
                   className="h-11 flex-1 rounded-full bg-brand-primary hover:bg-brand-primary/90"
+                  asChild
                 >
-                  Done
+                  <Link href="/">Back to Home</Link>
                 </Button>
               </div>
             </div>
           )}
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

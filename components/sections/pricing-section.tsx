@@ -43,7 +43,7 @@ const PRICING_ITEMS = [
 export function PricingSection() {
   return (
     <section id="pricing" className="section-container py-16 md:py-24">
-      <div className="mb-12 max-w-2xl">
+      <div className="mx-auto mb-12 max-w-2xl text-center">
         <h2>Transparent Pricing</h2>
         <p className="mt-3 text-muted-foreground">
           No surprise bills. We provide upfront estimates before any treatment

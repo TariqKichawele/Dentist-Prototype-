@@ -42,13 +42,15 @@ export function GuaranteeSection() {
                 key={item.title}
                 className="rounded-xl border-border bg-ice-bg text-center shadow-sm"
               >
-                <CardHeader className="items-center">
-                  <div className="flex size-14 items-center justify-center rounded-full bg-brand-secondary/10">
+                <CardHeader className="flex flex-col items-center justify-center text-center">
+                  <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-secondary/10">
                     <Icon className="size-7 text-brand-secondary" strokeWidth={1.5} aria-hidden="true" />
                   </div>
-                  <CardTitle className="text-lg text-foreground">{item.title}</CardTitle>
+                  <CardTitle className="w-full text-center text-lg text-foreground">
+                    {item.title}
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="text-center">
                   <p className="text-sm leading-relaxed text-muted-foreground">
                     {item.description}
                   </p>
