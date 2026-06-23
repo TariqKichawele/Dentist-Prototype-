@@ -5,8 +5,9 @@ import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { GOOGLE_REVIEWS_URL } from "@/lib/practice";
 
 type Testimonial = {
   id: number;
@@ -73,6 +74,7 @@ const FILTERS = [
 export function TestimonialsSection() {
   const [filter, setFilter] = useState("all");
   const [index, setIndex] = useState(0);
+  const [animating, setAnimating] = useState(false);
 
   const filtered =
     filter === "all"
@@ -81,8 +83,17 @@ export function TestimonialsSection() {
 
   const current = filtered[index % filtered.length] ?? TESTIMONIALS[0];
 
-  const goNext = () => setIndex((i) => (i + 1) % filtered.length);
-  const goPrev = () => setIndex((i) => (i - 1 + filtered.length) % filtered.length);
+  const changeIndex = (next: number) => {
+    setAnimating(true);
+    setTimeout(() => {
+      setIndex(next);
+      setAnimating(false);
+    }, 150);
+  };
+
+  const goNext = () => changeIndex((index + 1) % filtered.length);
+  const goPrev = () =>
+    changeIndex((index - 1 + filtered.length) % filtered.length);
 
   const handleFilter = (id: string) => {
     setFilter(id);
@@ -98,6 +109,20 @@ export function TestimonialsSection() {
             Real reviews from real patients — filter by the service you&apos;re
             considering.
           </p>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            <div className="flex items-center gap-1">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star
+                  key={i}
+                  className="size-4 fill-warning text-warning"
+                  aria-hidden="true"
+                />
+              ))}
+            </div>
+            <span className="text-sm font-medium text-foreground">
+              4.9 average · 320+ reviews
+            </span>
+          </div>
         </div>
 
         <div
@@ -108,14 +133,30 @@ export function TestimonialsSection() {
           {FILTERS.map((f) => (
             <Button
               key={f.id}
+              id={`tab-${f.id}`}
               role="tab"
               aria-selected={filter === f.id}
+              aria-controls="testimonial-panel"
+              tabIndex={filter === f.id ? 0 : -1}
               variant={filter === f.id ? "default" : "outline"}
               size="sm"
               onClick={() => handleFilter(f.id)}
+              onKeyDown={(e) => {
+                const idx = FILTERS.findIndex((x) => x.id === f.id);
+                if (e.key === "ArrowRight") {
+                  FILTERS[(idx + 1) % FILTERS.length];
+                  handleFilter(FILTERS[(idx + 1) % FILTERS.length].id);
+                }
+                if (e.key === "ArrowLeft") {
+                  handleFilter(
+                    FILTERS[(idx - 1 + FILTERS.length) % FILTERS.length].id
+                  );
+                }
+              }}
               className={cn(
                 "rounded-full",
-                filter === f.id && "bg-brand-primary text-white hover:bg-brand-primary/90"
+                filter === f.id &&
+                  "bg-brand-primary text-white hover:bg-brand-primary/90"
               )}
             >
               {f.label}
@@ -123,9 +164,19 @@ export function TestimonialsSection() {
           ))}
         </div>
 
-        <Card className="w-full overflow-hidden rounded-2xl border-border bg-surface-white shadow-sm">
+        <Card
+          id="testimonial-panel"
+          role="tabpanel"
+          aria-labelledby={`tab-${filter}`}
+          className="w-full overflow-hidden rounded-2xl border-border bg-surface-white shadow-sm"
+        >
           <CardContent className="p-6 md:p-10">
-            <div className="flex flex-col items-center gap-6 text-center">
+            <div
+              className={cn(
+                "flex flex-col items-center gap-6 text-center transition-opacity duration-150",
+                animating ? "opacity-0" : "opacity-100"
+              )}
+            >
               <div className="relative size-24 shrink-0 overflow-hidden rounded-full md:size-28">
                 <Image
                   src={current.image}
@@ -136,7 +187,10 @@ export function TestimonialsSection() {
                 />
               </div>
 
-              <div className="flex items-center justify-center gap-1">
+              <div
+                className="flex items-center justify-center gap-1"
+                aria-label={`${current.rating} out of 5 stars`}
+              >
                 {Array.from({ length: current.rating }).map((_, i) => (
                   <Star
                     key={i}
@@ -188,6 +242,16 @@ export function TestimonialsSection() {
             </div>
           </CardContent>
         </Card>
+
+        <a
+          href={GOOGLE_REVIEWS_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 text-sm font-medium text-brand-primary hover:underline"
+        >
+          Read all 320+ reviews on Google
+          <ExternalLink className="size-4" aria-hidden="true" />
+        </a>
       </div>
     </section>
   );

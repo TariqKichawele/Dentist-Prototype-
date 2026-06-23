@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, CreditCard, Moon } from "lucide-react";
 
@@ -7,18 +8,21 @@ const GUARANTEES = [
     title: "No Insurance? No Problem.",
     description:
       "Our in-house membership plan covers cleanings, exams, and discounts on all treatments — starting at $29/month.",
+    link: { href: "/#pricing", label: "View membership pricing" },
   },
   {
     icon: Moon,
     title: "Sedation Options Available.",
     description:
       "Nitrous oxide and oral sedation for anxious patients. Our team is trained in gentle, fear-free techniques.",
+    link: { href: "/#faq", label: "Learn about anxiety-free care" },
   },
   {
     icon: Calendar,
     title: "Real-Time Online Scheduling.",
     description:
       "See live availability and book instantly. No more waiting days for a callback from the front desk.",
+    link: { href: "/book", label: "Book online now" },
   },
 ];
 
@@ -44,7 +48,11 @@ export function GuaranteeSection() {
               >
                 <CardHeader className="flex flex-col items-center justify-center gap-4 text-center">
                   <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-secondary/10">
-                    <Icon className="size-7 text-brand-secondary" strokeWidth={1.5} aria-hidden="true" />
+                    <Icon
+                      className="size-7 text-brand-secondary"
+                      strokeWidth={1.5}
+                      aria-hidden="true"
+                    />
                   </div>
                   <CardTitle className="w-full text-center text-lg text-foreground">
                     {item.title}
@@ -54,6 +62,12 @@ export function GuaranteeSection() {
                   <p className="text-sm leading-relaxed text-muted-foreground">
                     {item.description}
                   </p>
+                  <Link
+                    href={item.link.href}
+                    className="mt-4 inline-block text-sm font-medium text-brand-primary hover:underline"
+                  >
+                    {item.link.label} →
+                  </Link>
                 </CardContent>
               </Card>
             );

@@ -208,9 +208,9 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
 
       <div className="overflow-hidden rounded-2xl border border-border bg-surface-white shadow-sm">
         <div className="border-b px-6 py-5">
-          <p className="text-2xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold text-foreground">
             {step === 4 ? "You're All Set!" : "Book Your Appointment"}
-          </p>
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground" id="booking-description">
             {step === 4
               ? "Your appointment has been confirmed."
@@ -343,7 +343,7 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
                     <button
                       type="button"
                       onClick={() => setCalendarMonth(new Date(year, month - 1, 1))}
-                      className="rounded-lg px-2 py-1 text-sm text-brand-primary hover:bg-brand-primary/5"
+                      className="rounded-lg px-2 py-1 text-sm text-brand-primary hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-primary/30"
                       aria-label="Previous month"
                     >
                       ←
@@ -357,7 +357,7 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
                     <button
                       type="button"
                       onClick={() => setCalendarMonth(new Date(year, month + 1, 1))}
-                      className="rounded-lg px-2 py-1 text-sm text-brand-primary hover:bg-brand-primary/5"
+                      className="rounded-lg px-2 py-1 text-sm text-brand-primary hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-primary/30"
                       aria-label="Next month"
                     >
                       →
@@ -630,6 +630,13 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
                   >
                     Add to Google Calendar
                   </a>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-11 flex-1 rounded-full"
+                  asChild
+                >
+                  <Link href="/#team">Meet the Team</Link>
                 </Button>
                 <Button
                   className="h-11 flex-1 rounded-full bg-brand-primary hover:bg-brand-primary/90"

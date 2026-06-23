@@ -1,10 +1,14 @@
+import Link from "next/link";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { getBookingHref } from "@/lib/booking";
 import { Sparkles, Shield, Stethoscope } from "lucide-react";
 
 const SERVICE_CATEGORIES = [
@@ -14,6 +18,8 @@ const SERVICE_CATEGORIES = [
     description: "Routine Cleanings, X-Rays, Check-ups",
     icon: Shield,
     services: ["Routine Cleaning", "Dental X-Rays", "Annual Check-up"],
+    bookingService: "cleaning",
+    ctaLabel: "Book Cleaning",
   },
   {
     id: "restorative",
@@ -21,6 +27,8 @@ const SERVICE_CATEGORIES = [
     description: "Root Canals, Crowns, Fillings",
     icon: Stethoscope,
     services: ["Root Canal", "Dental Crown", "Tooth Filling"],
+    bookingService: "other",
+    ctaLabel: "Book Consultation",
   },
   {
     id: "cosmetic",
@@ -28,6 +36,8 @@ const SERVICE_CATEGORIES = [
     description: "Veneers, Professional Whitening, Clear Aligners",
     icon: Sparkles,
     services: ["Veneers", "Professional Whitening", "Clear Aligners"],
+    bookingService: "cosmetic",
+    ctaLabel: "Book Cosmetic Consult",
   },
 ];
 
@@ -52,23 +62,43 @@ export function ServicesSection() {
             >
               <CardHeader className="flex flex-col items-center gap-2 text-center">
                 <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-brand-primary/10">
-                  <Icon className="size-6 text-brand-primary" strokeWidth={1.5} aria-hidden="true" />
+                  <Icon
+                    className="size-6 text-brand-primary"
+                    strokeWidth={1.5}
+                    aria-hidden="true"
+                  />
                 </div>
                 <CardTitle className="w-full text-center text-lg text-foreground">
                   {category.title}
                 </CardTitle>
-                <CardDescription className="text-center">{category.description}</CardDescription>
+                <CardDescription className="text-center">
+                  {category.description}
+                </CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-1 flex-col items-center pb-6">
+              <CardContent className="flex flex-1 flex-col items-center pb-4">
                 <ul className="space-y-2 text-sm text-muted-foreground">
                   {category.services.map((service) => (
                     <li key={service} className="flex items-center gap-2">
-                      <span className="size-1.5 shrink-0 rounded-full bg-brand-secondary" aria-hidden="true" />
+                      <span
+                        className="size-1.5 shrink-0 rounded-full bg-brand-secondary"
+                        aria-hidden="true"
+                      />
                       {service}
                     </li>
                   ))}
                 </ul>
               </CardContent>
+              <CardFooter className="justify-center border-0 bg-transparent pt-0 pb-6">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="focus-glow rounded-full border-brand-primary text-brand-primary hover:bg-brand-primary/5"
+                >
+                  <Link href={getBookingHref(category.bookingService)}>
+                    {category.ctaLabel}
+                  </Link>
+                </Button>
+              </CardFooter>
             </Card>
           );
         })}

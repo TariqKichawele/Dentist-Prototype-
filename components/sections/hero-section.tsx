@@ -20,26 +20,39 @@ export function HeroSection() {
           <Button
             asChild
             size="lg"
-            className="h-12 w-full rounded-full bg-brand-accent px-8 text-base font-semibold text-white hover:bg-brand-accent-hover sm:w-fit"
+            className="focus-glow h-12 w-full rounded-full bg-brand-accent px-8 text-base font-semibold text-white hover:bg-brand-accent-hover sm:w-fit"
           >
             <Link href={getBookingHref()}>
               Book Online Now — Free First Consultation
             </Link>
           </Button>
 
-          <div className="flex w-full max-w-full flex-nowrap items-center gap-x-1.5 text-[10px] whitespace-nowrap text-muted-foreground sm:gap-x-2 sm:text-[11px] lg:text-xs">
-            <span className="inline-flex min-w-0 items-center gap-1 font-medium text-foreground">
-              <Star className="size-3 shrink-0 fill-warning text-warning" aria-hidden="true" />
+          <div className="flex flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:text-sm">
+            <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+              <Star
+                className="size-3.5 shrink-0 fill-warning text-warning"
+                aria-hidden="true"
+              />
               Google Rating 4.9★ (320+ reviews)
             </span>
-            <span className="shrink-0 text-border" aria-hidden="true">|</span>
-            <span className="inline-flex shrink-0 items-center gap-1">
-              <ShieldCheck className="size-3 shrink-0 text-brand-secondary" aria-hidden="true" />
+            <span className="hidden sm:inline text-border" aria-hidden="true">
+              |
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck
+                className="size-3.5 shrink-0 text-brand-secondary"
+                aria-hidden="true"
+              />
               ADA Certified
             </span>
-            <span className="shrink-0 text-border" aria-hidden="true">|</span>
-            <span className="inline-flex shrink-0 items-center gap-1">
-              <Award className="size-3 shrink-0 text-brand-primary" aria-hidden="true" />
+            <span className="hidden sm:inline text-border" aria-hidden="true">
+              |
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Award
+                className="size-3.5 shrink-0 text-brand-primary"
+                aria-hidden="true"
+              />
               Invisalign Provider
             </span>
           </div>

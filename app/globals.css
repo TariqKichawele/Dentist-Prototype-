@@ -132,4 +132,72 @@
   .focus-glow:focus-visible {
     box-shadow: 0 0 0 3px rgba(10, 78, 104, 0.15);
   }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  .skip-link {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+  .skip-link:focus {
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 100;
+    width: auto;
+    height: auto;
+    margin: 0;
+    padding: 0.5rem 1rem;
+    overflow: visible;
+    clip: auto;
+    white-space: normal;
+    border-radius: 0.5rem;
+    background-color: var(--brand-primary);
+    color: white;
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  }
+  .scroll-reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition:
+      opacity 0.5s ease-out,
+      transform 0.5s ease-out;
+  }
+  .scroll-reveal-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .scroll-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

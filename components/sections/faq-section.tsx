@@ -4,6 +4,11 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  EMERGENCY_PHONE,
+  EMERGENCY_PHONE_HREF,
+  MAIN_PHONE_HREF,
+} from "@/lib/practice";
 
 const FAQ_ITEMS = [
   {
@@ -14,7 +19,7 @@ const FAQ_ITEMS = [
         We accept most major dental insurance plans including Delta Dental,
         Cigna, Aetna, MetLife, Guardian, and UnitedHealthcare. Not sure if
         you&apos;re covered?{" "}
-        <a href="tel:+15551234567" className="font-medium text-brand-primary">
+        <a href={MAIN_PHONE_HREF} className="font-medium text-brand-primary">
           Call us
         </a>{" "}
         and we&apos;ll verify your benefits before your visit — at no cost to
@@ -41,10 +46,10 @@ const FAQ_ITEMS = [
       <p>
         For dental emergencies, call us immediately at{" "}
         <a
-          href="tel:+15559876543"
+          href={EMERGENCY_PHONE_HREF}
           className="font-semibold text-destructive hover:underline"
         >
-          (555) 987-6543
+          {EMERGENCY_PHONE}
         </a>
         . We reserve same-day slots for urgent cases including severe pain,
         knocked-out teeth, and broken restorations. After hours? Our on-call

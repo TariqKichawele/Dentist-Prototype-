@@ -1,5 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { getBookingHref } from "@/lib/booking";
 
 const PRICING_ITEMS = [
   {
@@ -7,36 +9,42 @@ const PRICING_ITEMS = [
     price: "$99",
     description: "Exam, X-rays, and cleaning for uninsured patients",
     popular: true,
+    bookingService: "cleaning",
   },
   {
     service: "Routine Cleaning",
     price: "$120–$180",
     description: "With insurance, most patients pay $0–$30 copay",
     popular: false,
+    bookingService: "cleaning",
   },
   {
     service: "Professional Whitening",
     price: "$399",
     description: "In-office treatment, results in one visit",
     popular: false,
+    bookingService: "cosmetic",
   },
   {
     service: "Cosmetic Consultation",
     price: "Free",
     description: "Veneers, aligners, and smile design — no obligation",
     popular: false,
+    bookingService: "cosmetic",
   },
   {
     service: "Emergency Visit",
     price: "$150+",
     description: "Same-day slots available; treatment costs vary",
     popular: false,
+    bookingService: "emergency",
   },
   {
     service: "Membership Plan",
     price: "$29/mo",
     description: "2 cleanings/year + 20% off all treatments",
     popular: false,
+    bookingService: "cleaning",
   },
 ];
 
@@ -55,7 +63,7 @@ export function PricingSection() {
         {PRICING_ITEMS.map((item) => (
           <Card
             key={item.service}
-            className={`rounded-xl border-border bg-surface-white ${
+            className={`flex flex-col rounded-xl border-border bg-surface-white ${
               item.popular ? "ring-2 ring-brand-accent" : ""
             }`}
           >
@@ -65,12 +73,28 @@ export function PricingSection() {
                   Most Popular
                 </span>
               )}
-              <CardTitle className="text-lg text-foreground">{item.service}</CardTitle>
+              <CardTitle className="text-lg text-foreground">
+                {item.service}
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-brand-primary">{item.price}</p>
-              <p className="mt-2 text-sm text-muted-foreground">{item.description}</p>
+            <CardContent className="flex-1">
+              <p className="text-2xl font-bold text-brand-primary">
+                {item.price}
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {item.description}
+              </p>
             </CardContent>
+            <CardFooter className="border-0 bg-transparent pt-0">
+              <Button
+                asChild
+                className="focus-glow w-full rounded-full bg-brand-accent text-white hover:bg-brand-accent-hover"
+              >
+                <Link href={getBookingHref(item.bookingService)}>
+                  Book This
+                </Link>
+              </Button>
+            </CardFooter>
           </Card>
         ))}
       </div>
