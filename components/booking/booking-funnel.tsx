@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { FloatingInput } from "@/components/ui/floating-input";
@@ -15,69 +14,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CalendlyEmbed } from "@/components/booking/calendly-embed";
 import { cn } from "@/lib/utils";
 import {
-  Calendar,
-  CheckCircle2,
-  Clock,
-  Sparkles,
-  Stethoscope,
-  AlertCircle,
-  HelpCircle,
-  ArrowLeft,
-} from "lucide-react";
-
-const SERVICE_OPTIONS = [
-  {
-    id: "cleaning",
-    label: "Routine Cleaning & Exam",
-    icon: Sparkles,
-    mapsTo: "Routine Cleaning",
-  },
-  {
-    id: "emergency",
-    label: "Tooth Pain / Emergency",
-    icon: AlertCircle,
-    mapsTo: "Emergency Visit",
-  },
-  {
-    id: "cosmetic",
-    label: "Cosmetic Consultation",
-    icon: Stethoscope,
-    mapsTo: "Cosmetic Consultation",
-  },
-  {
-    id: "other",
-    label: "Other",
-    icon: HelpCircle,
-    mapsTo: "Other",
-  },
-];
-
-const INSURANCE_OPTIONS = [
-  "Delta Dental",
-  "Cigna",
-  "Aetna",
-  "MetLife",
-  "Guardian",
-  "UnitedHealthcare",
-  "no-insurance",
-];
-
-const TIME_SLOTS = {
-  Morning: ["8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM"],
-  Afternoon: ["12:00 PM", "12:30 PM", "1:00 PM", "2:00 PM", "2:30 PM", "3:00 PM"],
-  Evening: ["4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM", "6:00 PM"],
-};
-
-const LOW_AVAILABILITY_DAYS = [3, 7, 12, 18];
-const STEPS = ["Service", "Insurance", "Schedule", "Details", "Confirmed"];
+  BOOKING_STEPS,
+  findServiceMatch,
+  INSURANCE_OPTIONS,
+  SERVICE_OPTIONS,
+} from "@/lib/booking/constants";
+import { createClient } from "@/lib/supabase/client";
+import type { Practitioner } from "@/lib/database.types";
+import { MAIN_PHONE, MAIN_PHONE_HREF } from "@/lib/practice";
+import { CheckCircle2, ArrowLeft, UserRound } from "lucide-react";
 
 type FormData = {
   service: string;
+  practitionerId: string;
   insurance: string;
-  date: Date | null;
-  time: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -94,44 +47,26 @@ function formatPhone(value: string): string {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
-function getDaysInMonth(year: number, month: number) {
-  return new Date(year, month + 1, 0).getDate();
-}
-
-function isSameDay(a: Date, b: Date) {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
-}
-
-function findServiceMatch(preselectedService: string) {
-  return SERVICE_OPTIONS.find(
-    (s) =>
-      s.mapsTo === preselectedService ||
-      s.label.includes(preselectedService) ||
-      preselectedService.includes(s.mapsTo) ||
-      preselectedService.includes(s.label)
-  );
-}
-
 type BookingFunnelProps = {
   preselectedService?: string | null;
 };
 
 export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
   const [step, setStep] = useState(0);
-  const [submitting, setSubmitting] = useState(false);
-  const [processing, setProcessing] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
-  const [calendarMonth, setCalendarMonth] = useState(() => new Date());
+  const [practitioners, setPractitioners] = useState<Practitioner[]>([]);
+  const [loadingPractitioners, setLoadingPractitioners] = useState(false);
+  const [practitionerError, setPractitionerError] = useState<string | null>(
+    null
+  );
+  const [calendlyUrl, setCalendlyUrl] = useState<string | null>(null);
+  const [loadingCalendlyUrl, setLoadingCalendlyUrl] = useState(false);
+  const [calendlyUrlError, setCalendlyUrlError] = useState<string | null>(null);
 
   const [form, setForm] = useState<FormData>({
     service: "",
+    practitionerId: "",
     insurance: "",
-    date: null,
-    time: "",
     firstName: "",
     lastName: "",
     email: "",
@@ -148,8 +83,124 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
     }
   }, [preselectedService]);
 
+  useEffect(() => {
+    if (step !== 1 || !form.service) return;
+
+    let cancelled = false;
+
+    async function loadPractitioners() {
+      setLoadingPractitioners(true);
+      setPractitionerError(null);
+
+      try {
+        const supabase = createClient();
+        const { data: appointmentType, error: typeError } = await supabase
+          .from("appointment_types")
+          .select("id")
+          .eq("slug", form.service)
+          .maybeSingle();
+
+        if (typeError) {
+          if (typeError.code === "PGRST205" || typeError.message.includes("does not exist")) {
+            throw new Error(
+              "Booking database is not set up yet. Run npm run db:push (or npm run db:seed after pushing the schema)."
+            );
+          }
+          throw typeError;
+        }
+        if (!appointmentType) {
+          throw new Error(
+            "No appointment types found in the database. Run npm run db:seed to load service data."
+          );
+        }
+
+        const { data: mappings, error: mappingError } = await supabase
+          .from("practitioner_services")
+          .select("practitioner_id, practitioners(*)")
+          .eq("appointment_type_id", appointmentType.id);
+
+        if (mappingError) throw mappingError;
+
+        const list = (mappings ?? [])
+          .map((row) => {
+            const practitioner = row.practitioners;
+            if (Array.isArray(practitioner)) return practitioner[0];
+            return practitioner;
+          })
+          .filter((p): p is Practitioner => p != null);
+
+        if (!cancelled) {
+          setPractitioners(list);
+          if (list.length === 0) {
+            setPractitionerError(
+              "No practitioners are available for this service. Please call us to schedule."
+            );
+          }
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setPractitionerError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load practitioners."
+          );
+          setPractitioners([]);
+        }
+      } finally {
+        if (!cancelled) setLoadingPractitioners(false);
+      }
+    }
+
+    loadPractitioners();
+    return () => {
+      cancelled = true;
+    };
+  }, [step, form.service]);
+
+  useEffect(() => {
+    if (step !== 4 || !form.practitionerId || !form.service) return;
+
+    let cancelled = false;
+
+    async function loadCalendlyUrl() {
+      setLoadingCalendlyUrl(true);
+      setCalendlyUrlError(null);
+      setCalendlyUrl(null);
+
+      try {
+        const params = new URLSearchParams({
+          practitionerId: form.practitionerId,
+          appointmentTypeSlug: form.service,
+        });
+        const response = await fetch(`/api/booking/calendly-url?${params}`);
+        const data = (await response.json()) as { url?: string; error?: string };
+
+        if (!response.ok) {
+          throw new Error(data.error ?? "Unable to load scheduling widget.");
+        }
+
+        if (!cancelled) setCalendlyUrl(data.url ?? null);
+      } catch (error) {
+        if (!cancelled) {
+          setCalendlyUrlError(
+            error instanceof Error
+              ? error.message
+              : "Unable to load scheduling widget."
+          );
+        }
+      } finally {
+        if (!cancelled) setLoadingCalendlyUrl(false);
+      }
+    }
+
+    loadCalendlyUrl();
+    return () => {
+      cancelled = true;
+    };
+  }, [step, form.practitionerId, form.service]);
+
   const handleServiceSelect = (serviceId: string) => {
-    setForm((f) => ({ ...f, service: serviceId }));
+    setForm((f) => ({ ...f, service: serviceId, practitionerId: "" }));
     setTimeout(() => setStep(1), 200);
   };
 
@@ -168,33 +219,24 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleDetailsContinue = () => {
     if (!validateDetails()) return;
-    setSubmitting(true);
-    setProcessing(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setProcessing(false);
     setStep(4);
-    setSubmitting(false);
   };
 
   const selectedServiceLabel =
     SERVICE_OPTIONS.find((s) => s.id === form.service)?.label ?? "";
 
-  const year = calendarMonth.getFullYear();
-  const month = calendarMonth.getMonth();
-  const daysInMonth = getDaysInMonth(year, month);
-  const firstDayOfWeek = new Date(year, month, 1).getDay();
-  const today = new Date();
+  const selectedPractitioner = practitioners.find(
+    (p) => p.id === form.practitionerId
+  );
 
-  const calendarDays = Array.from({ length: daysInMonth }, (_, i) => {
-    const day = i + 1;
-    const date = new Date(year, month, day);
-    const isPast =
-      date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
-    const isLowAvailability = LOW_AVAILABILITY_DAYS.includes(day);
-    return { day, date, isPast, isLowAvailability };
-  });
+  const insuranceLabel =
+    form.insurance === "no-insurance"
+      ? "Out-of-pocket / No Insurance"
+      : form.insurance;
+
+  const progressSteps = 5;
 
   return (
     <div className="mx-auto w-full max-w-2xl">
@@ -209,17 +251,17 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
       <div className="overflow-hidden rounded-2xl border border-border bg-surface-white shadow-sm">
         <div className="border-b px-6 py-5">
           <h1 className="text-2xl font-bold text-foreground">
-            {step === 4 ? "You're All Set!" : "Book Your Appointment"}
+            {step === 5 ? "You're All Set!" : "Book Your Appointment"}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground" id="booking-description">
-            {step === 4
+            {step === 5
               ? "Your appointment has been confirmed."
-              : `Step ${step + 1} of 4 — ${STEPS[step]}`}
+              : `Step ${step + 1} of ${progressSteps} — ${BOOKING_STEPS[step]}`}
           </p>
 
-          {step < 4 && (
+          {step < 5 && (
             <div className="mt-4 flex gap-1.5" aria-hidden="true">
-              {[0, 1, 2, 3].map((s) => (
+              {Array.from({ length: progressSteps }).map((_, s) => (
                 <div
                   key={s}
                   className={cn(
@@ -270,10 +312,104 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
             <div className="space-y-6">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">
-                  Insurance & Payment
+                  Choose Your Practitioner
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
                   Selected: {selectedServiceLabel}
+                </p>
+              </div>
+
+              {loadingPractitioners ? (
+                <div className="flex flex-col items-center gap-3 py-12">
+                  <Spinner className="size-8 text-brand-primary" />
+                  <p className="text-sm text-muted-foreground">
+                    Loading available practitioners…
+                  </p>
+                </div>
+              ) : practitionerError ? (
+                <div className="rounded-xl border border-border bg-ice-bg p-5 text-sm text-muted-foreground">
+                  <p>{practitionerError}</p>
+                  <p className="mt-3">
+                    Call us at{" "}
+                    <a
+                      href={MAIN_PHONE_HREF}
+                      className="font-medium text-brand-primary hover:underline"
+                    >
+                      {MAIN_PHONE}
+                    </a>
+                  </p>
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {practitioners.map((practitioner) => (
+                    <button
+                      key={practitioner.id}
+                      type="button"
+                      onClick={() =>
+                        setForm((f) => ({ ...f, practitionerId: practitioner.id }))
+                      }
+                      className={cn(
+                        "flex items-start gap-4 rounded-xl border-2 p-4 text-left transition-all",
+                        "hover:border-brand-primary hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-primary/20",
+                        form.practitionerId === practitioner.id
+                          ? "border-brand-primary bg-brand-primary/5"
+                          : "border-border bg-surface-white"
+                      )}
+                    >
+                      <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-primary/10">
+                        <UserRound
+                          className="size-6 text-brand-primary"
+                          aria-hidden="true"
+                        />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {practitioner.name}
+                        </p>
+                        {practitioner.specialty && (
+                          <p className="mt-0.5 text-sm text-brand-secondary">
+                            {practitioner.specialty}
+                          </p>
+                        )}
+                        {practitioner.role && (
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            {practitioner.role}
+                          </p>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setStep(0)}
+                  className="h-11 rounded-full"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={() => setStep(2)}
+                  disabled={!form.practitionerId || !!practitionerError}
+                  className="h-11 flex-1 rounded-full bg-brand-primary hover:bg-brand-primary/90"
+                >
+                  Continue
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">
+                  Insurance & Payment
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {selectedServiceLabel}
+                  {selectedPractitioner ? ` with ${selectedPractitioner.name}` : ""}
                 </p>
               </div>
 
@@ -315,146 +451,6 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
               <div className="flex gap-3">
                 <Button
                   variant="outline"
-                  onClick={() => setStep(0)}
-                  className="h-11 rounded-full"
-                >
-                  Back
-                </Button>
-                <Button
-                  onClick={() => setStep(2)}
-                  disabled={!form.insurance}
-                  className="h-11 flex-1 rounded-full bg-brand-primary hover:bg-brand-primary/90"
-                >
-                  Continue to Scheduling
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-foreground">
-                Choose Date & Time
-              </h2>
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="rounded-xl border border-border p-4">
-                  <div className="mb-4 flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setCalendarMonth(new Date(year, month - 1, 1))}
-                      className="rounded-lg px-2 py-1 text-sm text-brand-primary hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-primary/30"
-                      aria-label="Previous month"
-                    >
-                      ←
-                    </button>
-                    <span className="font-medium text-foreground">
-                      {calendarMonth.toLocaleString("default", {
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setCalendarMonth(new Date(year, month + 1, 1))}
-                      className="rounded-lg px-2 py-1 text-sm text-brand-primary hover:bg-brand-primary/5 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-brand-primary/30"
-                      aria-label="Next month"
-                    >
-                      →
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-7 gap-1 text-center text-xs font-medium text-muted-foreground">
-                    {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map((d) => (
-                      <div key={d}>{d}</div>
-                    ))}
-                  </div>
-
-                  <div
-                    className="mt-2 grid grid-cols-7 gap-1"
-                    role="grid"
-                    aria-label="Calendar date picker"
-                  >
-                    {Array.from({ length: firstDayOfWeek }).map((_, i) => (
-                      <div key={`empty-${i}`} />
-                    ))}
-                    {calendarDays.map(({ day, date, isPast, isLowAvailability }) => {
-                      const selected = form.date && isSameDay(form.date, date);
-                      return (
-                        <button
-                          key={day}
-                          type="button"
-                          disabled={isPast}
-                          onClick={() => setForm((f) => ({ ...f, date, time: "" }))}
-                          aria-label={`${date.toLocaleDateString("default", { month: "long", day: "numeric" })}${isLowAvailability ? ", limited availability" : ""}`}
-                          aria-selected={selected ?? undefined}
-                          role="gridcell"
-                          className={cn(
-                            "relative flex size-9 items-center justify-center rounded-lg text-sm transition-colors",
-                            isPast && "cursor-not-allowed text-muted-foreground/40",
-                            !isPast && "hover:bg-brand-primary/10",
-                            selected && "bg-brand-primary text-white hover:bg-brand-primary"
-                          )}
-                        >
-                          {day}
-                          {isLowAvailability && !isPast && (
-                            <span
-                              className="absolute -top-0.5 right-0.5 size-1.5 rounded-full bg-warning"
-                              aria-hidden="true"
-                            />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {form.date && LOW_AVAILABILITY_DAYS.includes(form.date.getDate()) && (
-                    <Badge className="mt-3 rounded-full bg-warning/10 text-warning hover:bg-warning/10">
-                      Only 2 slots left for this day
-                    </Badge>
-                  )}
-                </div>
-
-                <div className="max-h-72 space-y-4 overflow-y-auto">
-                  {form.date ? (
-                    Object.entries(TIME_SLOTS).map(([period, slots]) => (
-                      <div key={period}>
-                        <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-foreground">
-                          <Clock className="size-3.5" aria-hidden="true" />
-                          {period}
-                        </p>
-                        <div className="grid grid-cols-2 gap-2">
-                          {slots.map((slot) => (
-                            <button
-                              key={slot}
-                              type="button"
-                              onClick={() => setForm((f) => ({ ...f, time: slot }))}
-                              className={cn(
-                                "rounded-lg border px-3 py-2 text-sm transition-colors",
-                                form.time === slot
-                                  ? "border-brand-primary bg-brand-primary text-white"
-                                  : "border-border hover:border-brand-primary/50"
-                              )}
-                              aria-pressed={form.time === slot}
-                            >
-                              {slot}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-muted-foreground">
-                      <Calendar className="size-8 opacity-40" aria-hidden="true" />
-                      <p className="text-sm">Select a date to see available times</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <Button
-                  variant="outline"
                   onClick={() => setStep(1)}
                   className="h-11 rounded-full"
                 >
@@ -462,7 +458,7 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
                 </Button>
                 <Button
                   onClick={() => setStep(3)}
-                  disabled={!form.date || !form.time}
+                  disabled={!form.insurance}
                   className="h-11 flex-1 rounded-full bg-brand-primary hover:bg-brand-primary/90"
                 >
                   Continue
@@ -475,15 +471,11 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
             <div className="space-y-5">
               <div>
                 <h2 className="text-lg font-semibold text-foreground">
-                  Almost Done — Your Details
+                  Your Details
                 </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {form.date?.toLocaleDateString("default", {
-                    weekday: "long",
-                    month: "long",
-                    day: "numeric",
-                  })}{" "}
-                  at {form.time}
+                  We&apos;ll pre-fill your information on the next step so you
+                  don&apos;t have to enter it twice.
                 </p>
               </div>
 
@@ -491,14 +483,18 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
                 <FloatingInput
                   label="First Name"
                   value={form.firstName}
-                  onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, firstName: e.target.value }))
+                  }
                   error={errors.firstName}
                   autoComplete="given-name"
                 />
                 <FloatingInput
                   label="Last Name"
                   value={form.lastName}
-                  onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, lastName: e.target.value }))
+                  }
                   error={errors.lastName}
                   autoComplete="family-name"
                 />
@@ -550,33 +546,75 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
                   Back
                 </Button>
                 <Button
-                  onClick={handleSubmit}
-                  disabled={submitting}
+                  onClick={handleDetailsContinue}
                   className="h-12 flex-1 rounded-full bg-brand-accent text-base font-semibold text-white hover:bg-brand-accent-hover"
                 >
-                  {submitting ? (
-                    <span className="flex items-center gap-2">
-                      <Spinner className="size-5 text-white" />
-                      Confirming...
-                    </span>
-                  ) : (
-                    "Confirm Appointment"
-                  )}
+                  Continue to Scheduling
                 </Button>
               </div>
             </div>
           )}
 
           {step === 4 && (
-            <div className="flex flex-col items-center py-4 text-center">
-              {processing ? (
-                <Spinner className="size-12 text-brand-primary" />
-              ) : (
-                <CheckCircle2
-                  className="size-16 animate-in zoom-in-50 text-success duration-500"
-                  aria-hidden="true"
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">
+                  Pick a Time
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {selectedServiceLabel}
+                  {selectedPractitioner ? ` with ${selectedPractitioner.name}` : ""}
+                </p>
+              </div>
+
+              {loadingCalendlyUrl ? (
+                <div className="flex flex-col items-center gap-3 py-16">
+                  <Spinner className="size-8 text-brand-primary" />
+                  <p className="text-sm text-muted-foreground">
+                    Preparing your scheduling calendar…
+                  </p>
+                </div>
+              ) : calendlyUrlError ? (
+                <div className="rounded-xl border border-border bg-ice-bg p-5 text-sm text-muted-foreground">
+                  <p>{calendlyUrlError}</p>
+                  <p className="mt-3">
+                    Call us at{" "}
+                    <a
+                      href={MAIN_PHONE_HREF}
+                      className="font-medium text-brand-primary hover:underline"
+                    >
+                      {MAIN_PHONE}
+                    </a>
+                  </p>
+                </div>
+              ) : calendlyUrl ? (
+                <CalendlyEmbed
+                  url={calendlyUrl}
+          prefill={{
+            email: form.email,
+            firstName: form.firstName,
+            lastName: form.lastName,
+          }}
+                  onScheduled={() => setStep(5)}
                 />
-              )}
+              ) : null}
+
+              <Button
+                variant="outline"
+                onClick={() => setStep(3)}
+                className="h-11 rounded-full"
+              >
+                Back
+              </Button>
+            </div>
+          )}
+
+          {step === 5 && (
+            <div className="flex flex-col items-center py-4 text-center">
+              <CheckCircle2
+                className="size-16 animate-in zoom-in-50 text-success duration-500"
+                aria-hidden="true"
+              />
 
               <h2 className="mt-6 text-xl font-semibold text-foreground">
                 Appointment Confirmed!
@@ -591,19 +629,17 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
                     <dt className="text-muted-foreground">Service</dt>
                     <dd className="font-medium text-foreground">{selectedServiceLabel}</dd>
                   </div>
+                  {selectedPractitioner && (
+                    <div className="flex justify-between gap-4">
+                      <dt className="text-muted-foreground">Practitioner</dt>
+                      <dd className="font-medium text-foreground">
+                        {selectedPractitioner.name}
+                      </dd>
+                    </div>
+                  )}
                   <div className="flex justify-between gap-4">
-                    <dt className="text-muted-foreground">Date</dt>
-                    <dd className="font-medium text-foreground">
-                      {form.date?.toLocaleDateString("default", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </dd>
-                  </div>
-                  <div className="flex justify-between gap-4">
-                    <dt className="text-muted-foreground">Time</dt>
-                    <dd className="font-medium text-foreground">{form.time}</dd>
+                    <dt className="text-muted-foreground">Insurance</dt>
+                    <dd className="font-medium text-foreground">{insuranceLabel}</dd>
                   </div>
                   <div className="flex justify-between gap-4">
                     <dt className="text-muted-foreground">Location</dt>
@@ -623,19 +659,6 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
 
               <div className="mt-6 flex w-full flex-col gap-3 sm:flex-row">
                 <Button variant="outline" className="h-11 flex-1 rounded-full" asChild>
-                  <a
-                    href={`https://calendar.google.com/calendar/render?action=TEMPLATE&text=Dental+Appointment&dates=20260101T100000Z/20260101T110000Z&details=${selectedServiceLabel}&location=123+Smile+Avenue`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Add to Google Calendar
-                  </a>
-                </Button>
-                <Button
-                  variant="outline"
-                  className="h-11 flex-1 rounded-full"
-                  asChild
-                >
                   <Link href="/#team">Meet the Team</Link>
                 </Button>
                 <Button
