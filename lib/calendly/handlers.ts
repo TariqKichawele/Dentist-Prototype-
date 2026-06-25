@@ -14,37 +14,22 @@ async function upsertPatient(
 ) {
   const supabase = createAdminClient();
 
-  const { data: existing } = await supabase
+  const { data, error } = await supabase
     .from("patients")
-    .select("id")
-    .eq("email", email.toLowerCase())
-    .maybeSingle();
-
-  if (existing) {
-    await supabase
-      .from("patients")
-      .update({
+    .upsert(
+      {
+        email: email.toLowerCase(),
         first_name: firstName,
         last_name: lastName,
-        phone: phone ?? undefined,
-      })
-      .eq("id", existing.id);
-    return existing.id;
-  }
-
-  const { data: created, error } = await supabase
-    .from("patients")
-    .insert({
-      email: email.toLowerCase(),
-      first_name: firstName,
-      last_name: lastName,
-      phone,
-    })
+        ...(phone != null ? { phone } : {}),
+      },
+      { onConflict: "email" }
+    )
     .select("id")
     .single();
 
   if (error) throw error;
-  return created.id;
+  return data.id;
 }
 
 async function resolvePractitionerService(eventTypeUri: string) {
