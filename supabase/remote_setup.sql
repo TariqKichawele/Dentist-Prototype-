@@ -41,6 +41,14 @@ create table if not exists patients (
   created_at timestamptz not null default now()
 );
 
+create table if not exists booking_intents (
+  email text primary key,
+  practitioner_id uuid not null references practitioners(id) on delete cascade,
+  appointment_type_id uuid not null references appointment_types(id) on delete cascade,
+  insurance text not null,
+  updated_at timestamptz not null default now()
+);
+
 do $$ begin
   create type appointment_status as enum ('scheduled', 'canceled');
 exception when duplicate_object then null;
@@ -67,6 +75,7 @@ alter table practitioners enable row level security;
 alter table appointment_types enable row level security;
 alter table practitioner_services enable row level security;
 alter table patients enable row level security;
+alter table booking_intents enable row level security;
 alter table appointments enable row level security;
 
 drop policy if exists "Public read practitioners" on practitioners;

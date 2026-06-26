@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { InlineWidget, useCalendlyEventListener } from "react-calendly";
 import { Spinner } from "@/components/ui/spinner";
+import { CALENDLY_PAGE_SETTINGS } from "@/lib/calendly/theme";
 import { cn } from "@/lib/utils";
 
 export type CalendlyPrefill = {
@@ -35,7 +36,7 @@ export function CalendlyEmbed({ url, prefill, onScheduled }: CalendlyEmbedProps)
   }, [url]);
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-surface-white">
+    <div className="calendly-embed relative overflow-hidden rounded-xl border border-border bg-surface-white">
       {loading && (
         <div
           className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-surface-white"
@@ -55,10 +56,7 @@ export function CalendlyEmbed({ url, prefill, onScheduled }: CalendlyEmbedProps)
             firstName: prefill.firstName,
             lastName: prefill.lastName,
           }}
-          pageSettings={{
-            hideEventTypeDetails: false,
-            hideLandingPageDetails: false,
-          }}
+          pageSettings={CALENDLY_PAGE_SETTINGS}
         />
       </div>
       <p className="border-t border-border px-4 py-3 text-center text-sm text-muted-foreground">

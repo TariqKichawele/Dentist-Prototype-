@@ -62,6 +62,8 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
   const [calendlyUrl, setCalendlyUrl] = useState<string | null>(null);
   const [loadingCalendlyUrl, setLoadingCalendlyUrl] = useState(false);
   const [calendlyUrlError, setCalendlyUrlError] = useState<string | null>(null);
+  const [savingPatient, setSavingPatient] = useState(false);
+  const [patientSaveError, setPatientSaveError] = useState<string | null>(null);
 
   const [form, setForm] = useState<FormData>({
     service: "",
@@ -219,9 +221,44 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleDetailsContinue = () => {
+  const handleDetailsContinue = async () => {
     if (!validateDetails()) return;
-    setStep(4);
+
+    setSavingPatient(true);
+    setPatientSaveError(null);
+
+    try {
+      const response = await fetch("/api/booking/patient", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: form.email,
+          firstName: form.firstName,
+          lastName: form.lastName,
+          phone: form.phone,
+          practitionerId: form.practitionerId,
+          appointmentTypeSlug: form.service,
+          insurance: form.insurance,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(data?.error ?? "Unable to save your details.");
+      }
+
+      setStep(4);
+    } catch (error) {
+      setPatientSaveError(
+        error instanceof Error
+          ? error.message
+          : "Unable to save your details. Please try again."
+      );
+    } finally {
+      setSavingPatient(false);
+    }
   };
 
   const selectedServiceLabel =
@@ -537,19 +574,34 @@ export function BookingFunnel({ preselectedService }: BookingFunnelProps) {
                 </Label>
               </div>
 
+              {patientSaveError && (
+                <p className="text-sm text-destructive" role="alert">
+                  {patientSaveError}
+                </p>
+              )}
+
               <div className="flex gap-3">
                 <Button
                   variant="outline"
                   onClick={() => setStep(2)}
                   className="h-11 rounded-full"
+                  disabled={savingPatient}
                 >
                   Back
                 </Button>
                 <Button
                   onClick={handleDetailsContinue}
+                  disabled={savingPatient}
                   className="h-12 flex-1 rounded-full bg-brand-accent text-base font-semibold text-white hover:bg-brand-accent-hover"
                 >
-                  Continue to Scheduling
+                  {savingPatient ? (
+                    <>
+                      <Spinner className="mr-2 size-4" />
+                      Saving…
+                    </>
+                  ) : (
+                    "Continue to Scheduling"
+                  )}
                 </Button>
               </div>
             </div>

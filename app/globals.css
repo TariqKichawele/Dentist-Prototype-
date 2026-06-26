@@ -205,6 +205,14 @@
   }
 }
 
+.calendly-embed .calendly-inline-widget {
+  background: var(--surface-white);
+}
+
+.calendly-embed .calendly-inline-widget iframe {
+  color-scheme: light;
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

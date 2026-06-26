@@ -38,6 +38,14 @@ export type Patient = {
   created_at: string;
 };
 
+export type BookingIntent = {
+  email: string;
+  practitioner_id: string;
+  appointment_type_id: string;
+  insurance: string;
+  updated_at: string;
+};
+
 export type Appointment = {
   id: string;
   patient_id: string | null;
@@ -104,6 +112,12 @@ export type Database = {
           created_at?: string;
         };
         Update: Partial<Patient>;
+        Relationships: [];
+      };
+      booking_intents: {
+        Row: BookingIntent;
+        Insert: Omit<BookingIntent, "updated_at"> & { updated_at?: string };
+        Update: Partial<BookingIntent>;
         Relationships: [];
       };
       appointments: {

@@ -1,48 +1,51 @@
-import { createAdminClient } from "@/lib/supabase/admin";
 import {
   extractCalendlyUuid,
   normalizeCalendlyUrl,
   normalizeEventTypeUri,
   type CalendlyWebhookPayload,
 } from "@/lib/calendly/types";
+import {
+  deleteBookingIntent,
+  getBookingIntent,
+  type BookingIntent,
+} from "@/lib/booking/intent";
+import { upsertPatient } from "@/lib/patients/upsert";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-async function upsertPatient(
-  email: string,
-  firstName: string | null,
-  lastName: string | null,
-  phone: string | null
+async function resolvePractitionerService(
+  eventTypeUri: string,
+  intent?: BookingIntent | null
 ) {
-  const supabase = createAdminClient();
+  if (intent) {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("practitioner_services")
+      .select("id, practitioner_id, appointment_type_id, calendly_event_url")
+      .eq("practitioner_id", intent.practitioner_id)
+      .eq("appointment_type_id", intent.appointment_type_id)
+      .maybeSingle();
 
-  const { data, error } = await supabase
-    .from("patients")
-    .upsert(
-      {
-        email: email.toLowerCase(),
-        first_name: firstName,
-        last_name: lastName,
-        ...(phone != null ? { phone } : {}),
-      },
-      { onConflict: "email" }
-    )
-    .select("id")
-    .single();
+    if (data) return data;
+  }
 
-  if (error) throw error;
-  return data.id;
-}
-
-async function resolvePractitionerService(eventTypeUri: string) {
   const supabase = createAdminClient();
   const normalizedUri = normalizeEventTypeUri(eventTypeUri);
 
-  const { data: byUri } = await supabase
+  const { data: byUri, error: byUriError } = await supabase
     .from("practitioner_services")
     .select("id, practitioner_id, appointment_type_id, calendly_event_url")
-    .eq("calendly_event_type_uri", normalizedUri)
-    .maybeSingle();
+    .eq("calendly_event_type_uri", normalizedUri);
 
-  if (byUri) return byUri;
+  if (byUriError) throw byUriError;
+
+  if (byUri?.length === 1) return byUri[0];
+
+  if (byUri && byUri.length > 1 && intent?.practitioner_id) {
+    return (
+      byUri.find((service) => service.practitioner_id === intent.practitioner_id) ??
+      null
+    );
+  }
 
   const { data: allServices } = await supabase
     .from("practitioner_services")
@@ -80,34 +83,73 @@ function extractInsurance(
   return match?.answer ?? null;
 }
 
+function resolveInviteeName(
+  invitee: CalendlyWebhookPayload["payload"]
+): { firstName: string | null; lastName: string | null } {
+  const firstName = invitee.first_name?.trim() || null;
+  const lastName = invitee.last_name?.trim() || null;
+  if (firstName || lastName) {
+    return { firstName, lastName };
+  }
+  return splitName(invitee.name);
+}
+
+function extractPhone(
+  invitee: CalendlyWebhookPayload["payload"]
+): string | null {
+  const sms = invitee.text_reminder_number?.trim();
+  if (sms) return sms;
+
+  const fromQuestion = invitee.questions_and_answers?.find((q) =>
+    /phone/i.test(q.question)
+  )?.answer?.trim();
+
+  return fromQuestion || null;
+}
+
 export async function handleInviteeCreated(payload: CalendlyWebhookPayload) {
   const invitee = payload.payload;
   const scheduledEvent = invitee.scheduled_event;
   const calendlyUuid = extractCalendlyUuid(invitee.uri);
-  const { firstName, lastName } = splitName(invitee.name);
-  const insurance = extractInsurance(invitee.questions_and_answers);
+  const { firstName, lastName } = resolveInviteeName(invitee);
+  const phone = extractPhone(invitee);
+  const patientEmail = invitee.email.toLowerCase();
+  const bookingIntent = await getBookingIntent(patientEmail);
+  const insuranceFromCalendly = extractInsurance(invitee.questions_and_answers);
+  const insurance = insuranceFromCalendly ?? bookingIntent?.insurance ?? null;
 
-  const patientId = await upsertPatient(
-    invitee.email,
+  const patientId = await upsertPatient({
+    email: invitee.email,
     firstName,
     lastName,
-    null
-  );
+    phone,
+  });
 
-  const mapping = await resolvePractitionerService(scheduledEvent.event_type);
+  const mapping = scheduledEvent?.event_type
+    ? await resolvePractitionerService(scheduledEvent.event_type, bookingIntent)
+    : null;
+
+  if (!scheduledEvent?.start_time || !scheduledEvent?.end_time) {
+    throw new Error("Calendly webhook missing scheduled event times");
+  }
+
+  const practitionerId =
+    bookingIntent?.practitioner_id ?? mapping?.practitioner_id ?? null;
+  const appointmentTypeId =
+    bookingIntent?.appointment_type_id ?? mapping?.appointment_type_id ?? null;
 
   const supabase = createAdminClient();
   const { error } = await supabase.from("appointments").upsert(
     {
       calendly_uuid: calendlyUuid,
       patient_id: patientId,
-      practitioner_id: mapping?.practitioner_id ?? null,
-      appointment_type_id: mapping?.appointment_type_id ?? null,
-      calendly_event_uri: scheduledEvent.uri,
+      practitioner_id: practitionerId,
+      appointment_type_id: appointmentTypeId,
+      calendly_event_uri: scheduledEvent.uri ?? invitee.event ?? null,
       status: "scheduled",
       start_time: scheduledEvent.start_time,
       end_time: scheduledEvent.end_time,
-      patient_email: invitee.email.toLowerCase(),
+      patient_email: patientEmail,
       patient_name: invitee.name,
       insurance,
     },
@@ -115,6 +157,10 @@ export async function handleInviteeCreated(payload: CalendlyWebhookPayload) {
   );
 
   if (error) throw error;
+
+  if (bookingIntent) {
+    await deleteBookingIntent(patientEmail);
+  }
 }
 
 export async function handleInviteeCanceled(payload: CalendlyWebhookPayload) {

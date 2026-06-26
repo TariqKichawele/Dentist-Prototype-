@@ -5,10 +5,14 @@ export type CalendlyWebhookPayload = {
     uri: string;
     email: string;
     name: string;
+    first_name?: string | null;
+    last_name?: string | null;
+    text_reminder_number?: string | null;
     status: string;
     cancel_url?: string;
     reschedule_url?: string;
-    scheduled_event: {
+    event?: string;
+    scheduled_event?: {
       uri: string;
       name: string;
       start_time: string;
