@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus_Jakarta_Sans, Playfair_Display } from "next/font/google";
+import { JsonLd } from "@/components/seo/json-ld";
 import { PRACTICE_NAME } from "@/lib/practice";
+import { buildDentistJsonLd } from "@/lib/seo/schemas";
+import { getSiteUrl } from "@/lib/site";
 import "./globals.css";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -16,10 +19,10 @@ const playfair = Playfair_Display({
   weight: ["700"],
 });
 
+const siteUrl = getSiteUrl();
+
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
-  ),
+  metadataBase: new URL(siteUrl),
   title: `${PRACTICE_NAME} | Book Online in Under 2 Minutes`,
   description:
     "Book a routine cleaning or specialized procedure online. Accepting new patients and all major insurance. Gentle, anxiety-free dental care tailored to your schedule.",
@@ -33,9 +36,10 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     siteName: PRACTICE_NAME,
+    url: siteUrl,
     images: [
       {
-        url: "/og-image.svg",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: `${PRACTICE_NAME} — Book your appointment online`,
@@ -47,7 +51,7 @@ export const metadata: Metadata = {
     title: `${PRACTICE_NAME} | Book Online`,
     description:
       "Gentle, anxiety-free dental care. Book online in under 2 minutes.",
-    images: ["/og-image.svg"],
+    images: ["/og-image.png"],
   },
 };
 
@@ -62,6 +66,7 @@ export default function RootLayout({
       className={`${jakarta.variable} ${playfair.variable} h-full`}
     >
       <body className="min-h-full flex flex-col pb-20 md:pb-0">
+        <JsonLd data={buildDentistJsonLd()} />
         <Link href="#main-content" className="skip-link">
           Skip to main content
         </Link>

@@ -1,8 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { PRACTICE_NAME } from "@/lib/practice";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: `Terms of Service | ${PRACTICE_NAME}`,
+  alternates: {
+    canonical: "/terms",
+  },
 };
 
 export default function TermsPage() {

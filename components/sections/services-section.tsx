@@ -8,34 +8,14 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getBookingHref } from "@/lib/booking";
-import { Sparkles, Shield, Stethoscope } from "lucide-react";
+import { SERVICE_CATEGORIES } from "@/lib/services";
+import { Sparkles, Shield, Stethoscope, type LucideIcon } from "lucide-react";
 
-const SERVICE_CATEGORIES = [
-  {
-    id: "preventative",
-    title: "Preventative Care",
-    icon: Shield,
-    services: ["Routine Cleaning", "Dental X-Rays", "Annual Check-up"],
-    bookingService: "cleaning",
-    ctaLabel: "Book Cleaning",
-  },
-  {
-    id: "restorative",
-    title: "Advanced Restorative",
-    icon: Stethoscope,
-    services: ["Root Canal", "Dental Crown", "Tooth Filling"],
-    bookingService: "other",
-    ctaLabel: "Book Consultation",
-  },
-  {
-    id: "cosmetic",
-    title: "Cosmetic / Aesthetics",
-    icon: Sparkles,
-    services: ["Veneers", "Professional Whitening", "Clear Aligners"],
-    bookingService: "cosmetic",
-    ctaLabel: "Book Cosmetic Consult",
-  },
-];
+const ICONS: Record<(typeof SERVICE_CATEGORIES)[number]["icon"], LucideIcon> = {
+  shield: Shield,
+  stethoscope: Stethoscope,
+  sparkles: Sparkles,
+};
 
 export function ServicesSection() {
   return (
@@ -50,10 +30,10 @@ export function ServicesSection() {
 
       <div className="grid gap-6 md:grid-cols-3">
         {SERVICE_CATEGORIES.map((category) => {
-          const Icon = category.icon;
+          const Icon = ICONS[category.icon];
           return (
             <Card
-              key={category.id}
+              key={category.slug}
               className="flex flex-col rounded-xl border-border bg-surface-white shadow-sm transition-shadow hover:shadow-md"
             >
               <CardHeader className="flex flex-col items-center gap-2 text-center">
@@ -81,15 +61,22 @@ export function ServicesSection() {
                   ))}
                 </ul>
               </CardContent>
-              <CardFooter className="justify-center border-0 bg-transparent pt-0 pb-6">
+              <CardFooter className="flex flex-col gap-2 border-0 bg-transparent pt-0 pb-6">
                 <Button
                   asChild
                   variant="outline"
-                  className="focus-glow rounded-full border-brand-primary text-brand-primary hover:bg-brand-primary/5"
+                  className="focus-glow w-full rounded-full border-brand-primary text-brand-primary hover:bg-brand-primary/5"
                 >
                   <Link href={getBookingHref(category.bookingService)}>
                     {category.ctaLabel}
                   </Link>
+                </Button>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="w-full rounded-full text-muted-foreground hover:text-brand-primary"
+                >
+                  <Link href={`/services/${category.slug}`}>Learn more</Link>
                 </Button>
               </CardFooter>
             </Card>

@@ -1,8 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { EMAIL_HREF, PRACTICE_NAME } from "@/lib/practice";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: `Accessibility Statement | ${PRACTICE_NAME}`,
+  alternates: {
+    canonical: "/accessibility",
+  },
 };
 
 export default function AccessibilityPage() {

@@ -16,15 +16,17 @@ import { MAIN_PHONE_HREF, PRACTICE_NAME } from "@/lib/practice";
 import { Menu, Phone } from "lucide-react";
 
 const NAV_LINKS = [
-  { href: "/#services", label: "Services" },
-  { href: "/#team", label: "Team" },
-  { href: "/#pricing", label: "Pricing" },
-  { href: "/#testimonials", label: "Reviews" },
-  { href: "/#faq", label: "FAQ" },
-  { href: "/#contact", label: "Contact" },
-];
+  { href: "/#services", label: "Services", sectionId: "services" },
+  { href: "/#team", label: "Team", sectionId: "team" },
+  { href: "/#pricing", label: "Pricing", sectionId: "pricing" },
+  { href: "/#testimonials", label: "Reviews", sectionId: "testimonials" },
+  { href: "/faq", label: "FAQ" },
+  { href: "/#contact", label: "Contact", sectionId: "contact" },
+] as const;
 
-const SECTION_IDS = NAV_LINKS.map((l) => l.href.replace("/#", ""));
+const SECTION_IDS = NAV_LINKS.flatMap((l) =>
+  "sectionId" in l && l.sectionId ? [l.sectionId] : []
+);
 
 export function Navbar() {
   const [activeSection, setActiveSection] = useState<string | null>(null);
@@ -72,14 +74,15 @@ export function Navbar() {
           aria-label="Main navigation"
         >
           {NAV_LINKS.map((link) => {
-            const sectionId = link.href.replace("/#", "");
+            const sectionId =
+              "sectionId" in link ? link.sectionId : undefined;
             return (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
                   "text-sm font-medium transition-colors hover:text-brand-primary",
-                  activeSection === sectionId
+                  sectionId && activeSection === sectionId
                     ? "text-brand-primary"
                     : "text-muted-foreground"
                 )}

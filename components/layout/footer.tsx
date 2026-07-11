@@ -14,11 +14,12 @@ import {
 import { SocialIconLink } from "@/components/ui/social-icon-link";
 
 const QUICK_LINKS = [
-  { href: "/#services", label: "Services" },
+  { href: "/services", label: "Services" },
+  { href: "/articles", label: "Guides" },
+  { href: "/faq", label: "FAQ" },
   { href: "/#team", label: "Our Team" },
   { href: "/#pricing", label: "Pricing" },
   { href: "/#testimonials", label: "Reviews" },
-  { href: "/#faq", label: "FAQ" },
   { href: "/#contact", label: "Contact" },
   { href: getBookingHref(), label: "Book Online" },
 ];
