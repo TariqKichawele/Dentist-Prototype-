@@ -14,9 +14,13 @@ import { ArticlesTeaserSection } from "@/components/sections/articles-teaser-sec
 import { ContactSection } from "@/components/sections/contact-section";
 import { CtaSection } from "@/components/sections/cta-section";
 import { JsonLd } from "@/components/seo/json-ld";
+import { PRACTICE_NAME } from "@/lib/practice";
 import { buildFeaturedFaqJsonLd } from "@/lib/seo/schemas";
 
 export const metadata: Metadata = {
+  title: `${PRACTICE_NAME} | Gentle, Anxiety-Free Dentistry in Smile City`,
+  description:
+    "Family dentistry with preventative, restorative, and cosmetic care. Accepting new patients and most major insurance. Clear answers, calm visits, and online booking when you're ready.",
   alternates: {
     canonical: "/",
   },
