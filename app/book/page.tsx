@@ -8,7 +8,10 @@ export const metadata: Metadata = {
   title: "Book Appointment | Gentle Dental Care",
   description:
     "Schedule your dental appointment online in under 2 minutes. Routine cleanings, cosmetic consultations, and emergency visits available.",
-};
+  alternates: {
+    canonical: "/book",
+  },
+}
 
 export default function BookPage() {
   return (
