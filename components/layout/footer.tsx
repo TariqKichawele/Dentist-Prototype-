@@ -18,6 +18,7 @@ const QUICK_LINKS = [
   { href: "/articles", label: "Guides" },
   { href: "/faq", label: "FAQ" },
   { href: "/#team", label: "Our Team" },
+  { href: "/#results", label: "Results" },
   { href: "/#pricing", label: "Pricing" },
   { href: "/#testimonials", label: "Reviews" },
   { href: "/#contact", label: "Contact" },

@@ -7,6 +7,7 @@ import { ServicesSection } from "@/components/sections/services-section";
 import { GuaranteeSection } from "@/components/sections/guarantee-section";
 import { InsuranceSection } from "@/components/sections/insurance-section";
 import { TeamSection } from "@/components/sections/team-section";
+import { SmileGallerySection } from "@/components/sections/smile-gallery-section";
 import { TestimonialsSection } from "@/components/sections/testimonials-section";
 import { PricingSection } from "@/components/sections/pricing-section";
 import { FaqSection } from "@/components/sections/faq-section";
@@ -38,6 +39,7 @@ export default function Home() {
         <ServicesSection />
         <GuaranteeSection />
         <TeamSection />
+        <SmileGallerySection />
         <TestimonialsSection />
         <PricingSection />
         <FaqSection />

@@ -18,6 +18,7 @@ import { Menu, Phone } from "lucide-react";
 const NAV_LINKS = [
   { href: "/#services", label: "Services", sectionId: "services" },
   { href: "/#team", label: "Team", sectionId: "team" },
+  { href: "/#results", label: "Results", sectionId: "results" },
   { href: "/#pricing", label: "Pricing", sectionId: "pricing" },
   { href: "/#testimonials", label: "Reviews", sectionId: "testimonials" },
   { href: "/faq", label: "FAQ" },
