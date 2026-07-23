@@ -2,72 +2,73 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getBookingHref } from "@/lib/booking";
-import { Award, ShieldCheck, Star } from "lucide-react";
+import { PRACTICE_NAME } from "@/lib/practice";
 
 export function HeroSection() {
   return (
-    <section className="section-container py-12 md:py-20">
-      <div className="grid items-center gap-12 lg:grid-cols-2">
-        <div className="relative z-10 flex min-w-0 flex-col gap-8 overflow-hidden">
-          <div className="space-y-4">
-            <h1>Gentle Dental Care Tailored to Your Schedule.</h1>
-            <p className="max-w-lg text-lg leading-relaxed text-muted-foreground">
-              Book a routine cleaning or specialized procedure online in under 2
-              minutes. Accepting new patients and all major insurance.
+    <section
+      className="relative isolate min-h-[min(92svh,52rem)] overflow-hidden"
+      aria-label="Welcome"
+    >
+      <div className="absolute inset-0">
+        <video
+          className="hero-video absolute inset-0 size-full object-cover motion-reduce:hidden"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          poster="/videos/hero-dental-poster.jpg"
+          aria-hidden="true"
+        >
+          <source src="/videos/hero-dental.mp4" type="video/mp4" />
+        </video>
+        <Image
+          src="/videos/hero-dental-poster.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover motion-safe:hidden"
+          aria-hidden="true"
+        />
+        {/* Bright family-friendly wash — readable copy, video stays luminous */}
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-white/90 via-white/75 to-white/55 md:bg-gradient-to-r md:from-white md:via-white/88 md:to-sky-50/30"
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-t from-ice-bg via-transparent to-transparent"
+          aria-hidden="true"
+        />
+      </div>
+
+      <div className="section-container relative flex min-h-[min(92svh,52rem)] flex-col justify-center py-16 md:py-24">
+        <div className="flex max-w-xl flex-col gap-6 md:gap-8">
+          <div className="hero-enter space-y-4">
+            <h1 className="font-display text-[2.5rem] leading-[1.1] font-bold tracking-tight text-brand-primary md:text-6xl lg:text-7xl">
+              {PRACTICE_NAME}
+            </h1>
+            <p className="max-w-md text-xl font-medium leading-snug text-foreground md:text-2xl">
+              Smiles for every member of the family.
+            </p>
+            <p className="max-w-md text-base leading-relaxed text-muted-foreground md:text-lg">
+              Book a cleaning or specialized visit online in under 2 minutes.
+              New patients welcome.
             </p>
           </div>
 
-          <Button
-            asChild
-            size="lg"
-            className="focus-glow h-12 w-full rounded-full bg-brand-accent px-8 text-base font-semibold text-white hover:bg-brand-accent-hover sm:w-fit"
-          >
-            <Link href={getBookingHref()}>
-              Book Online Now — Free First Consultation
-            </Link>
-          </Button>
-
-          <div className="flex flex-col gap-2 text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:text-sm">
-            <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-              <Star
-                className="size-3.5 shrink-0 fill-warning text-warning"
-                aria-hidden="true"
-              />
-              Google Rating 4.9★ (320+ reviews)
-            </span>
-            <span className="hidden sm:inline text-border" aria-hidden="true">
-              |
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <ShieldCheck
-                className="size-3.5 shrink-0 text-brand-secondary"
-                aria-hidden="true"
-              />
-              ADA Certified
-            </span>
-            <span className="hidden sm:inline text-border" aria-hidden="true">
-              |
-            </span>
-            <span className="inline-flex items-center gap-1.5">
-              <Award
-                className="size-3.5 shrink-0 text-brand-primary"
-                aria-hidden="true"
-              />
-              Invisalign Provider
-            </span>
+          <div className="hero-enter hero-enter-delay">
+            <Button
+              asChild
+              size="lg"
+              className="focus-glow h-12 w-full rounded-full bg-brand-accent px-8 text-base font-semibold text-white hover:bg-brand-accent-hover sm:w-fit"
+            >
+              <Link href={getBookingHref()}>
+                Book Online Now — Free First Consultation
+              </Link>
+            </Button>
           </div>
-        </div>
-
-        <div className="relative z-0 aspect-[4/5] overflow-hidden rounded-2xl lg:aspect-square">
-          <Image
-            src="https://images.unsplash.com/photo-1629909613654-28e377c37b09?w=800&q=80"
-            alt="Dr. Sarah Johnson greeting a patient in a modern, sunlit dental office clinical environment"
-            fill
-            className="object-cover"
-            priority
-            sizes="(max-width: 1024px) 100vw, 50vw"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-brand-primary/20 to-transparent" />
         </div>
       </div>
     </section>

@@ -194,6 +194,16 @@
   .partner-marquee-track {
     animation: partner-marquee 40s linear infinite;
   }
+  .hero-enter {
+    animation: hero-fade-up 0.75s ease-out both;
+  }
+  .hero-enter-delay {
+    animation-delay: 0.15s;
+  }
+  .hero-video {
+    animation: hero-ken 22s ease-in-out infinite alternate;
+    will-change: transform;
+  }
 }
 
 @keyframes partner-marquee {
@@ -202,6 +212,26 @@
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+@keyframes hero-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes hero-ken {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.06);
   }
 }
 
@@ -223,6 +253,10 @@
     transition: none;
   }
   .partner-marquee-track {
+    animation: none;
+  }
+  .hero-enter,
+  .hero-video {
     animation: none;
   }
   *,
